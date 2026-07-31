@@ -6,6 +6,59 @@ import {
 } from 'lucide-react'
 import { FaGithub, FaLinkedinIn } from 'react-icons/fa6'
 import Navbar from './components/Navbar'
+import Certifications from './components/Certifications'
+import ArchitectureSlider from './components/ArchitectureSlider'
+import TopologyCanvas from './components/TopologyCanvas'
+import TechStackMatrix from './components/TechStackMatrix'
+
+/* ─── Marquee ─── */
+const MARQUEE_ITEMS = [
+  'AWS Cloud', 'Terraform', 'DevOps', 'CI/CD', 'Kubernetes',
+  'GitHub Actions', 'Docker', 'Site Reliability', 'Datadog', 'Snyk',
+]
+function Marquee() {
+  const track = useRef(null)
+  useEffect(() => {
+    const el = track.current
+    if (!el) return
+    let x = 0
+    let raf
+    const speed = 0.5
+    const total = el.scrollWidth / 2
+
+    let visible = true
+    const io = new IntersectionObserver(
+      ([entry]) => { visible = entry.isIntersecting },
+      { threshold: 0 }
+    )
+    io.observe(el)
+
+    const tick = () => {
+      if (visible) {
+        x -= speed
+        if (Math.abs(x) >= total) x = 0
+        el.style.transform = `translateX(${x}px)`
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => { cancelAnimationFrame(raf); io.disconnect() }
+  }, [])
+
+  const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
+  return (
+    <div className="marquee-outer">
+      <div ref={track} className="marquee-track">
+        {items.map((item, i) => (
+          <span key={i} className="marquee-item">
+            <span className="marquee-dot" />
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 /* ─── Animated Counter ─── */
 function Counter({ to, suffix = '' }) {
@@ -55,15 +108,15 @@ function CustomCursor() {
     }
     raf = requestAnimationFrame(tick)
 
-    const onEnter = () => ring.current?.classList.add('hover')
-    const onLeave = () => ring.current?.classList.remove('hover')
-    document.querySelectorAll('a, button, [data-hover]').forEach(el => {
-      el.addEventListener('mouseenter', onEnter)
-      el.addEventListener('mouseleave', onLeave)
-    })
+    const onOver = e => {
+      if (e.target.closest('a, button, [data-hover]')) ring.current?.classList.add('hover')
+      else ring.current?.classList.remove('hover')
+    }
+    window.addEventListener('mouseover', onOver, { passive: true })
 
     return () => {
       window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseover', onOver)
       cancelAnimationFrame(raf)
     }
   }, [])
@@ -77,7 +130,7 @@ function CustomCursor() {
 }
 
 /* ─── Magnetic Button ─── */
-function MagBtn({ children, className, href, target, rel }) {
+function MagBtn({ children, className, href, target, rel, onClick }) {
   const ref = useRef(null)
   const x = useMotionValue(0), y = useMotionValue(0)
   const sx = useSpring(x, { stiffness: 200, damping: 20 })
@@ -88,9 +141,21 @@ function MagBtn({ children, className, href, target, rel }) {
     y.set((e.clientY - r.top - r.height / 2) * 0.25)
   }
   const onLeave = () => { x.set(0); y.set(0) }
+  const handleClick = e => {
+    if (onClick) onClick(e)
+    if (href && href.startsWith('#')) {
+      e.preventDefault()
+      if (window.__lenis) {
+        window.__lenis.scrollTo(href, { offset: href === '#about' ? 0 : -80 })
+      } else {
+        const target = document.querySelector(href)
+        if (target) target.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }
   const Tag = href ? motion.a : motion.button
   return (
-    <Tag ref={ref} style={{ x: sx, y: sy }} onMouseMove={onMove} onMouseLeave={onLeave}
+    <Tag ref={ref} style={{ x: sx, y: sy }} onMouseMove={onMove} onMouseLeave={onLeave} onClick={handleClick}
       className={className} href={href} target={target} rel={rel}>
       {children}
     </Tag>
@@ -185,24 +250,87 @@ const PROJECTS = [
     stack: ['Terraform', 'AWS ECS', 'GitHub Actions', 'Datadog'], impact: 'AWS & IaC', year: '2025–Now',
     link: 'https://github.com/ShubhamBhavsar101', color: 'var(--gold)',
     desc: 'Architected reusable Terraform modules, implemented rolling ECS Fargate deployments, designed least-privilege IAM policies, and configured GitHub Actions CI/CD integrating Ruff, Snyk, and ECR.',
+    results: [
+      'Reusable Terraform modules across Dev, Staging & Prod',
+      'Rolling ECS Fargate deployments with zero downtime',
+      'Least-privilege IAM design for every service account',
+      'GitHub Actions CI/CD with Ruff, Snyk & ECR gates',
+    ],
   },
   {
     num: '02', title: 'American International Group', subtitle: 'DevOps Engineer · TCS',
     stack: ['Jenkins', 'Docker', 'Snyk', 'SonarQube'], impact: '25% Faster CI/CD', year: '2022–2024',
     link: 'https://github.com/ShubhamBhavsar101', color: 'var(--wine-bright)',
     desc: 'Integrated DevSecOps pipelines with Snyk and SonarQube quality gates. Optimized build caching and parallel job execution, reducing average pipeline runtime by 25%.',
-  },
-  {
-    num: '03', title: 'Infrastructure Optimization', subtitle: 'Cloud Cost & Performance',
-    stack: ['AWS MSK', 'Lambda', 'Datadog', 'API Gateway'], impact: '50% Cost Cut', year: '2023–2024',
-    link: 'https://github.com/ShubhamBhavsar101', color: 'var(--bone-2)',
-    desc: 'Right-sized MSK clusters via Datadog analysis cutting AWS costs 50%. Switched Lambdas to zip deployments (50% faster deploys) and added in-memory caching boosting API throughput 10×.',
+    results: [
+      'DevSecOps pipelines with Snyk & SonarQube quality gates',
+      'Optimized build caching across every pipeline stage',
+      'Parallel job execution to remove idle wait time',
+      'Reduced average pipeline runtime by 25%',
+    ],
   },
 ]
+
+const CASE_STUDY = {
+  period: '2023–2024',
+  title: 'Infrastructure',
+  titleAccent: 'Optimization',
+  subtitle: 'Cloud Cost & Performance',
+  context: [
+    'A self-managed MSK (Kafka) cluster and a fast-growing fleet of Lambda functions were driving AWS spend upward while deployments slowed down. I led a focused optimization initiative spanning compute right-sizing, deployment strategy, and API latency.',
+    'Every change was driven by Datadog telemetry — mapping actual utilization against provisioned capacity, so spend followed real workload patterns rather than guesswork.',
+  ],
+  approach: [
+    {
+      n: '01',
+      title: 'Right-sized the MSK cluster',
+      desc: 'Analyzed broker CPU, memory, and storage utilization in Datadog, then resized the cluster to match actual workload — eliminating idle brokers and over-provisioned storage that were inflating the bill.',
+    },
+    {
+      n: '02',
+      title: 'Zip-based Lambda deployments',
+      desc: 'Replaced heavy container-based packaging with zip deployments. Smaller artifacts meant faster uploads, quicker cold-starts, and a 50% reduction in deploy time.',
+    },
+    {
+      n: '03',
+      title: 'Added an in-memory cache',
+      desc: 'Introduced caching on the hottest API paths so repeated compute was skipped entirely. The same infrastructure now served 10× the throughput.',
+    },
+  ],
+  metrics: [
+    { to: 50, suffix: '%', label: 'AWS Cost Reduced' },
+    { to: 10, suffix: '×', label: 'API Throughput Boost' },
+    { to: 50, suffix: '%', label: 'Faster Deploys' },
+  ],
+  stack: ['AWS MSK', 'Lambda', 'Datadog', 'API Gateway', 'Caching'],
+}
 
 /* ─── Framer Variants ─── */
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } } }
 const fadeUp  = { hidden: { opacity: 0, y: 28 }, show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } } }
+
+/* ─── Letter reveal variant ─── */
+const letterContainer = { hidden: {}, show: { transition: { staggerChildren: 0.04, delayChildren: 0.2 } } }
+const letterVariant = {
+  hidden: { opacity: 0, y: 60, rotateX: -40 },
+  show:   { opacity: 1, y: 0,  rotateX: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+}
+
+function SplitWord({ word, className }) {
+  return (
+    <motion.span
+      variants={letterContainer}
+      style={{ display: 'block', perspective: 600 }}
+      className={className}
+    >
+      {word.split('').map((ch, i) => (
+        <motion.span key={i} variants={letterVariant} style={{ display: 'inline-block' }}>
+          {ch}
+        </motion.span>
+      ))}
+    </motion.span>
+  )
+}
 
 /* ─── APP ─── */
 export default function App() {
@@ -265,8 +393,8 @@ export default function App() {
             </motion.div>
 
             <motion.h1 variants={stagger} className="hero-title-giant">
-              <motion.span variants={fadeUp} style={{ display: 'block' }}>Shubham</motion.span>
-              <motion.span variants={fadeUp} style={{ display: 'block' }}>Bhavsar</motion.span>
+              <SplitWord word="Shubham" />
+              <SplitWord word="Bhavsar" />
               <motion.span variants={fadeUp} style={{ display: 'block' }} className="hero-title-muted">
                 Ships Cloud,
               </motion.span>
@@ -276,7 +404,7 @@ export default function App() {
             </motion.h1>
 
             <motion.p variants={fadeUp} className="hero-lead-paragraph">
-              DevOps / SRE Engineer with 3+ years automating AWS infrastructure, CI/CD pipelines,
+              DevOps / SRE Engineer with 4 years automating AWS infrastructure, CI/CD pipelines,
               and Terraform-driven IaC — improving speed, observability, and reducing operational costs in production.
             </motion.p>
 
@@ -292,7 +420,7 @@ export default function App() {
             {/* Metrics Strip */}
             <motion.div variants={fadeUp} className="metrics-strip">
               {[
-                { to: 3,  suf: '+', label: 'Yrs DevOps / SRE' },
+                { to: 4,  suf: '', label: 'Yrs DevOps / SRE' },
                 { to: 50, suf: '%', label: 'AWS Cost Reduced' },
                 { to: 25, suf: '%', label: 'Faster Pipelines' },
                 { to: 3,  suf: '',  label: 'Certifications' },
@@ -307,6 +435,9 @@ export default function App() {
         </div>
       </section>
 
+      {/* ════════════════════════════ MARQUEE ════════════════════════════ */}
+      <Marquee />
+
       {/* ════════════════════════════ CAPABILITIES ════════════════════════════ */}
       <section id="capabilities" className="section-border" style={{ position: 'relative', zIndex: 2 }}>
         <div className="bento-section-container">
@@ -317,17 +448,18 @@ export default function App() {
             <span className="mono" style={{ color: 'var(--smoke)' }}>01 — Expertise</span>
           </motion.div>
 
-          <motion.div
-            className="capabilities-grid-2x2"
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          >
+          <div className="capabilities-grid-2x2">
             {CAPABILITIES.map((cap, i) => {
               const Icon = cap.Icon
               return (
-                <div key={i} className="bento-card">
+                <motion.div
+                  key={i}
+                  className="bento-card"
+                  initial={{ opacity: 0, y: 32 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                >
                   <div>
                     <div className="bento-icon-badge" style={{ color: cap.color, borderColor: `rgba(232,228,220,0.15)` }}>
                       <Icon size={18} />
@@ -341,10 +473,16 @@ export default function App() {
                       <span key={j} className="bento-tag">{t}</span>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               )
             })}
-          </motion.div>
+          </div>
+
+          {/* Interactive Cloud Topology Canvas */}
+          <TopologyCanvas />
+
+          {/* Interactive Tech Stack Matrix */}
+          <TechStackMatrix />
         </div>
       </section>
 
@@ -362,20 +500,31 @@ export default function App() {
           </motion.div>
 
           <motion.div
-            className="projects-list-container"
-            initial={{ opacity: 0, y: 24 }}
+            className="section-heading"
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
+            <h3 className="case-study-title">
+              Client <span className="serif-it">Work</span>
+            </h3>
+            <p className="case-study-subtitle mono">Enterprise DevOps · TCS</p>
+          </motion.div>
+
+          <div className="projects-list-container">
             {PROJECTS.map((proj, i) => (
-              <a
+              <motion.a
                 key={i}
                 href={proj.link}
                 target="_blank"
                 rel="noreferrer"
                 className="project-list-item"
                 data-hover
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               >
                 <div className="project-item-meta">
                   <span className="project-item-num">{proj.num}</span>
@@ -388,6 +537,14 @@ export default function App() {
                     <span className="project-item-subtitle">{proj.subtitle}</span>
                   </div>
                   <p className="project-item-desc">{proj.desc}</p>
+                  <ul className="project-item-results">
+                    {proj.results.map((r, j) => (
+                      <li key={j} className="project-result-item">
+                        <span className="project-result-dot" />
+                        {r}
+                      </li>
+                    ))}
+                  </ul>
                   <div className="project-item-tags">
                     {proj.stack.map((t, j) => (
                       <span key={j} className="project-tag-pill">{t}</span>
@@ -401,11 +558,73 @@ export default function App() {
                     <ArrowUpRight size={16} />
                   </div>
                 </div>
-              </a>
+              </motion.a>
             ))}
+          </div>
+
+          {/* Case Study — Infrastructure Optimization */}
+          <motion.div
+            className="case-study"
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="case-study-head">
+              <span className="mono" style={{ color: 'var(--gold)' }}>Case Study</span>
+              <span className="mono" style={{ color: 'var(--smoke)' }}>{CASE_STUDY.period}</span>
+            </div>
+
+            <div className="case-study-grid">
+              <div className="case-study-narrative">
+                <h3 className="case-study-title">
+                  {CASE_STUDY.title} <span className="serif-it">{CASE_STUDY.titleAccent}</span>
+                </h3>
+                <p className="case-study-subtitle mono">{CASE_STUDY.subtitle}</p>
+
+                {CASE_STUDY.context.map((p, i) => (
+                  <p key={i} className="case-study-para">{p}</p>
+                ))}
+
+                <div className="case-study-approach">
+                  {CASE_STUDY.approach.map((step, i) => (
+                    <div key={i} className="cs-step">
+                      <span className="cs-step-num">{step.n}</span>
+                      <div>
+                        <h4 className="cs-step-title">{step.title}</h4>
+                        <p className="cs-step-desc">{step.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <aside className="case-study-side">
+                <div className="cs-metrics">
+                  {CASE_STUDY.metrics.map((m, i) => (
+                    <div key={i} className="cs-metric">
+                      <div className="cs-metric-value"><Counter to={m.to} suffix={m.suffix} /></div>
+                      <div className="cs-metric-label">{m.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="cs-tags">
+                  {CASE_STUDY.stack.map((t, j) => (
+                    <span key={j} className="bento-tag">{t}</span>
+                  ))}
+                </div>
+              </aside>
+            </div>
+
+            {/* Interactive Architecture Before / After Slider */}
+            <ArchitectureSlider />
           </motion.div>
         </div>
       </section>
+
+      {/* ════════════════════════════ CERTIFICATIONS ════════════════════════════ */}
+      <Certifications />
 
       {/* ════════════════════════════ CONTACT ════════════════════════════ */}
       <section id="contact" style={{ position: 'relative', zIndex: 2 }}>
@@ -414,7 +633,7 @@ export default function App() {
             className="section-eyebrow-bar"
             initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }}
           >
-            <span className="mono" style={{ color: 'var(--smoke)' }}>03 — Contact</span>
+            <span className="mono" style={{ color: 'var(--smoke)' }}>04 — Contact</span>
           </motion.div>
 
           <motion.div
