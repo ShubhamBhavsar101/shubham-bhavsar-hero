@@ -452,13 +452,9 @@ export default function App() {
             {CAPABILITIES.map((cap, i) => {
               const Icon = cap.Icon
               return (
-                <motion.div
+                <div
                   key={i}
                   className="bento-card"
-                  initial={{ opacity: 0, y: 32 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.1 }}
-                  transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <div>
                     <div className="bento-icon-badge" style={{ color: cap.color, borderColor: `rgba(232,228,220,0.15)` }}>
@@ -473,7 +469,7 @@ export default function App() {
                       <span key={j} className="bento-tag">{t}</span>
                     ))}
                   </div>
-                </motion.div>
+                </div>
               )
             })}
           </div>
