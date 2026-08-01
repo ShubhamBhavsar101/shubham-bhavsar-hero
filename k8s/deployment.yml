@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shubham-bhavsar-hero
+  labels:
+    app: shubham-bhavsar-hero
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: shubham-bhavsar-hero
+  template:
+    metadata:
+      labels:
+        app: shubham-bhavsar-hero
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
+      containers:
+        - name: shubham-bhavsar-hero
+          image: shubhszone/shubhambhavsarhero:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
