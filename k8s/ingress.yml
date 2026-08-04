@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shubham-bhavsar-hero-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: portfolio.shubham.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: shubham-bhavsar-hero-service
+                port:
+                  number: 80

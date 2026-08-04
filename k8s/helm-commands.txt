@@ -1,0 +1,18 @@
+helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+helm repo update
+
+helm install metrics-server metrics-server/metrics-server \
+  -n kube-system \
+  --set args="{--kubelet-insecure-tls}"
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+kubectl create namespace monitoring
+
+helm install monitoring \
+  prometheus-community/kube-prometheus-stack \
+  --namespace monitoring
+
+jmeter -n -t /Users/shubh/Github/shubham-bhavsar-hero/k8s/HTTP-Request.jmx
+docker start my-kind-cluster-control-plane
+docker stop my-kind-cluster-control-plane

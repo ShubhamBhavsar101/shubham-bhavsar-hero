@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: loadtest-job
+spec:
+  # Delete the job automatically 60 seconds after it finishes
+  ttlSecondsAfterFinished: 60
+  template:
+    spec:
+      containers:
+      - name: hey
+        image: williamyeh/hey
+        # -c 50 = 50 concurrent workers
+        # -z 30s = run for 30 seconds
+        # -disable-keepalive = force new TCP connections so kube-proxy round-robins
+        args: ["-c", "10000", "-z", "30s", "-disable-keepalive", "http://shubham-bhavsar-hero-service"]
+      restartPolicy: Never
